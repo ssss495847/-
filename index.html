@@ -12,3 +12,44 @@ const section=document.createElement('section');section.className='series';secti
 
 `;document.querySelector('#guide').before(section);
 </script>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+const surveyForm = document.querySelector('#survey-form');
+const connectedForm = surveyForm.cloneNode(true);
+surveyForm.replaceWith(connectedForm);
+connectedForm.querySelector('.note').textContent = '提交後，姓名和所選品牌會儲存至問卷資料庫。';
+const questions = document.createElement('div');
+questions.innerHTML = `<style>.survey select{display:block;margin:10px 0 24px;padding:12px;width:min(100%,400px);font:inherit;border:0;border-radius:4px}</style>
+<label for="experience">你的羽球經驗</label><select id="experience" name="experience" required><option value="">請選擇</option><option>初學</option><option>1–3年</option><option>3年以上</option></select>
+<label for="play-frequency">你多久打一次羽球？</label><select id="play-frequency" name="play_frequency" required><option value="">請選擇</option><option>每週一次以下</option><option>每週2–3次</option><option>每週4次以上</option></select>
+<label for="priority">選購球拍時最重視什麼？</label><select id="priority" name="priority" required><option value="">請選擇</option><option>價格</option><option>操控</option><option>力量</option><option>速度</option><option>其他</option></select>`;
+connectedForm.querySelector('button').before(questions);
+connectedForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const message = connectedForm.querySelector('.message');
+  const button = connectedForm.querySelector('button');
+  const name = connectedForm.querySelector('#visitor-name').value.trim();
+  const brands = [...connectedForm.querySelectorAll('input[name=brand]:checked')].map(input => input.value);
+  if (!name || name.length > 100) { message.textContent = '請輸入 1 至 100 字的姓名。'; return; }
+  if (!brands.length) { message.textContent = '請至少選擇一個選項。'; return; }
+  button.disabled = true;
+  message.textContent = '正在送出…';
+  try {
+    const response = await fetch('https://pxsxuoybgtkoprkmiwur.supabase.co/rest/v1/survey_responses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': 'sb_publishable_pncUqLFA2tXWJCDICOsXGw_t10CsyFS', 'Authorization': 'Bearer sb_publishable_pncUqLFA2tXWJCDICOsXGw_t10CsyFS', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ name, brands, experience: connectedForm.elements.experience.value, play_frequency: connectedForm.elements.play_frequency.value, priority: connectedForm.elements.priority.value })
+    });
+    if (!response.ok) throw new Error('Submission failed');
+    connectedForm.reset();
+    message.textContent = '問卷已送出，謝謝你的分享！';
+  } catch (error) {
+    message.textContent = '送出失敗，請檢查網路連線後再試一次。';
+  } finally { button.disabled = false; }
+});
+});
+</script>
+<style>.survey{margin:70px 0;background:#173d30;color:#f5f5df;padding:clamp(24px,5vw,48px)}.survey label,.survey legend{font-weight:700}.survey input[type=text]{display:block;margin:12px 0 24px;padding:14px;border:0;border-radius:4px;width:min(100%,400px);font:inherit}.survey fieldset{border:0;padding:0;margin:0}.survey .choices{display:flex;gap:16px 24px;flex-wrap:wrap;margin:16px 0}.survey .choices label{font-weight:400}.survey button{background:#c4ee6c;color:#173d30;border:0;border-radius:4px}.survey .message{min-height:1.5em}</style><script>
+const survey=document.createElement('section');survey.className='survey';survey.innerHTML=`<span class="eyebrow">YOUR EXPERIENCE / 03</span><h2>分享你的球拍經驗</h2><p>告訴我們你的名字，以及曾經使用過的球拍品牌。</p><form id="survey-form"><label for="visitor-name">姓名</label><input id="visitor-name" name="name" type="text" required autocomplete="name" placeholder="請輸入姓名"><fieldset><legend>你用過哪些品牌的羽球拍？（可複選）</legend><div class="choices"><label><input type="checkbox" name="brand" value="YONEX"> YONEX</label><label><input type="checkbox" name="brand" value="VICTOR"> VICTOR 勝利</label><label><input type="checkbox" name="brand" value="LI-NING"> LI-NING 李寧</label><label><input type="checkbox" name="brand" value="MIZUNO"> MIZUNO</label><label><input type="checkbox" name="brand" value="KIZUNA"> KIZUNA</label><label><input type="checkbox" name="brand" value="其他"> 其他</label><label><input type="checkbox" name="brand" value="尚未使用過"> 尚未使用過</label></div></fieldset><button type="submit">完成問卷</button><p class="message" role="status" aria-live="polite"></p><p class="note" style="color:#cfddce">問卷內容只會顯示在目前頁面，不會傳送或儲存。</p></form>`;document.querySelector('main').append(survey);survey.querySelector('form').addEventListener('submit',e=>{e.preventDefault();const checked=[...survey.querySelectorAll('input[name=brand]:checked')];const message=survey.querySelector('.message');if(!checked.length){message.textContent='請至少選擇一個選項。';return}message.textContent=`謝謝 ${survey.querySelector('#visitor-name').value.trim()}！你的選擇：${checked.map(x=>x.value).join('、')}。`;});
+</script>
